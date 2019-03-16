@@ -1,0 +1,57 @@
+<input>
+
+	<A>
+		1,0,0,0,0,0
+		1,0,0,0,0,0
+		1,0,0,0,0,0
+		1,0,0,0,0,0
+		1,0,0,0,0,0
+		1,0,0,0,0,0
+	</A>
+
+	<B>
+	</B>
+
+	<h>
+		0.1
+	</h>
+
+	<mode>
+		.
+	</mode>
+
+	<faults>
+		3,3,0,3
+
+	</faults>
+
+	<variance>
+		5,5
+	</variance>
+
+	<initialset>
+		-1,1
+		-1,1
+		-1,1
+		-1,1
+		-1,1
+		-1,1
+	</initialset>
+
+	<name>
+		Example Model
+	</name>
+
+	<time>
+		20
+	</time>
+
+	<unsafestate>
+		0
+	</unsafestate>
+
+	<unsafeparam>
+		0
+	</unsafeparam>
+
+</input>

@@ -1,0 +1,213 @@
+PK/PD Model
++++++++++++
+* Faults=[(0,4,4,1)]
+* Initial Set: [(1,6),(0,10),(0,10),(1,8),(0,200)]
+? Need to discuss the last var i.e. (0,200)
+* variance = [5]
+* h=0.01
+? <What about Td??>
+* Safety: Viability Kernel
+	0<=r[4]<=200
+	Actually Checked for r[4]<=-1 and r[4]>=201
+? <Checked in two iterations, so what should be the time taken??>
+* Console Output
+------------ Final Report for  PK/PD Model - II  ------------
+Satisfies Inf-Linear Conditions:  True
+Safety Status of the system upto time  20 :  Safe
+Time Taken:  17.34580111503601
+Freed default Gurobi environment
+
+
+
+
+
+
+
+
+
+
+
+Flight Envelope
++++++++++++++++
+* Faults = [(0,7,10,6)]
+* Initial Set = [(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(5,10),(-0.1,0.1),(-0.1,0.1),(-0.1,0.1)]
+* variance = [5]
+* h=0.01
+* Safety: Viability Kernel
+	-0.50<=r[7]<=0.50
+	Actually Checked for r[7]<=-1
+? <Checked in two iterations, so what should be the time taken??>
+* Console Output (Violated at time step 49)
+Counter Example
+fault (0, 7, 10, 6) 0
+alpha0 3
+alpha1 3
+alpha2 3
+alpha3 3
+alpha4 3
+alpha5 3
+alpha6 -0.5
+alpha7 -0.5
+alpha8 -0.5
+alpha9 -1
+alpha10 -1
+alpha11 -1
+alpha12 5
+alpha13 -0.1
+alpha14 -0.1
+alpha15 -0.1
+Obj: -0.1
+
+
+------------ Final Report for  Flight Envelope Model  ------------
+Satisfies Inf-Linear Conditions:  True
+Safety Status of the system upto time  20 :  Unsafe (Counter Example Given above)
+Time Taken:  0.5695631504058838
+Freed default Gurobi environment
+
+
+
+
+
+
+
+
+
+
+
+
+Networked Cooperative Platoon of Vehicles - I
++++++++++++++++++++++++++++++++++++++++++++++
+* Faults = [(0,9,9,1)]
+* Initial Set = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
+? <The last var is taken as (0,0)>
+* Variance = [5]
+* h = 0.01
+* Safety: e1 < −e1min  OR  e2 < −e2min OR  e3< −e3min
+? <Discuss the safety conditions>
+e1min = 25, e2min=25, e3min=10
+? <Checked in three iterations, so what should be the time taken??>
+* Console Output
+------------ Final Report for  Networked Cooperative Platoon of Vehicles - I ------------
+Satisfies Inf-Linear Conditions:  True
+Safety Status of the system upto time  20 :  Safe
+Time Taken:  38.799615144729614
+Freed default Gurobi environment
+
+
+
+
+
+
+
+co
+
+
+
+Networked Cooperative Platoon of Vehicles - II
+++++++++++++++++++++++++++++++++++++++++++++++
+* Faults = [(0,9,9,1)]
+* Initial Set = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)]
+? <The last var is taken as (0,0)>
+* Variance = [5]
+* h = 0.01
+* Safety: e1 < −e1min  OR  e2 < −e2min OR  e3< −e3min
+? <Discuss the safety conditions>
+e1min = 25, e2min=25, e3min=10
+? <Checked in three iterations, so what should be the time taken??>
+* Console Output
+------------ Final Report for  Networked Cooperative Platoon of Vehicles - II  ------------
+Satisfies Inf-Linear Conditions:  True
+Safety Status of the system upto time  20 :  Safe
+Time Taken:  37.681936264038086
+Freed default Gurobi environment
+
+
+
+
+
+
+
+
+
+
+
+
+Holes
++++++
+* Faults = [(0, 4, 4, 4)]
+* Initial Set = [(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(-100,-100),(-100,-100)]
+* Variance = [5]
+* h = 0.01
+* Safety: Reach Set #5 bounded r[3] in [-1.39,1.39]
+? <Safety Condition Modified>
+? <Checked in two iterations, so what should be the time taken??>
+* Console Output
+
+Counter Example
+
+
+fault (0, 4, 4, 4) 1.65453
+alpha0 0
+alpha1 0
+alpha2 0
+alpha3 0
+alpha4 0
+alpha5 0
+alpha6 -100
+alpha7 -100
+Obj: -100
+
+
+------------ Final Report for  Holes Plant Xp  ------------
+Satisfies Inf-Linear Conditions:  True
+Safety Status of the system upto time  20 :  Unsafe (Counter Example Given above)
+Time Taken:  0.026663780212402344
+Freed default Gurobi environment
+
+
+
+
+
+
+
+
+
+
+
+
+
+Motor Transmission - I
+++++++++++++++++++++++
+* Faults = [(0, 4, 4, 3)]
+* Initial Set = [(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0),(70,70),(1,1)]
+* Variance = [5]
+* h = 0.01
+* Safety: px ≥ ∆p and I ≤ Ib r
+	checked r[2]<=0
+* Console Output
+Counter Example
+
+
+fault (0, 4, 4, 3) -0.00844444
+alpha0 0
+alpha1 -0.08
+alpha2 -0.165
+alpha3 -0.01
+alpha4 0
+alpha5 70
+alpha6 1
+Obj: 1
+
+
+------------ Final Report for  Motor Transmission - I  ------------
+Satisfies Inf-Linear Conditions:  True
+Safety Status of the system upto time  20 :  Unsafe (Counter Example Given above)
+Time Taken:  0.026137113571166992
+Freed default Gurobi environment
+
+
+
+
+
+
