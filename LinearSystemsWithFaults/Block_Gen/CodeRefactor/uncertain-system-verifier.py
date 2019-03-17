@@ -16,6 +16,7 @@ import multiprocessing.pool
 import time
 import math
 from gurobipy import *
+from numpy import linalg as LA
 import xml.etree.ElementTree as ET
 
 class Structure:
@@ -451,6 +452,75 @@ class CalcReachableSet:
 
         return False
 
+class CalcReachableSetFaultFree:
+
+    def __init__(self,A,n,k,initset,unsafeV,unsafeP):
+        self.matA=A
+        self.dimension=n
+        self.matAk=LA.matrix_power(A,k)
+        self.initialSet=initset
+        self.unsafeVariable=unsafeV
+        self.unsafeParam=unsafeP
+
+    def isFeasible(self):
+
+        flag=True
+        model = Model("lp")
+        #print(self.perturbations[0])
+        #exit(0)
+        #self.perturbations[0]=(0,0.6)
+        #print(self.perturbations[0])
+        #exit(0)
+        #model.Params.BarHomogeneous=1
+        #model.Params.NumericFocus=3
+
+        #create variables
+        dynVars=[]
+        for i in range(self.dimension):
+            name="alpha"+str(i)
+            dynVars.append(model.addVar(-GRB.INFINITY,GRB.INFINITY,name=name,vtype='C'))
+
+        #Add initial Set and Perturbations constraints
+        for i in range(self.dimension):
+            model.optimize()
+            name="Init-C"+str(i)
+            model.addConstr(dynVars[i]>=self.initialSet[i][0],name+".1")
+            model.addConstr(dynVars[i]<=self.initialSet[i][1],name+".2")
+
+        #Generate Final Equations
+        rVars=[]
+        for i in range(self.dimension):
+            obj=0
+            for j in range(self.dimension):
+                obj=obj+(self.matAk[i][j]*dynVars[j])
+            rVars.append(obj)
+
+        model.addConstr(rVars[self.unsafeVariable]<=self.unsafeParam)
+
+        #Produce Objectives
+
+        model.setObjective(rVars[self.unsafeVariable])
+        model.optimize()
+        status = model.Status
+        if status==GRB.Status.UNBOUNDED:
+            print("UNBOUNDED ")
+        else:
+            if status == GRB.Status.INF_OR_UNBD or \
+               status == GRB.Status.INFEASIBLE  or \
+               status == GRB.Status.UNBOUNDED:
+                print('**The model cannot be solved because it is infeasible or unbounded**')
+            else:
+                print("\n\nCounter Example\n\n")
+                for v in model.getVars():
+                    print('%s %g' % (v.varName, v.x))
+                print('Obj: %g' % obj.getValue())
+                return True
+
+
+            print("------------------------------")
+
+        return False
+
 class Benchmarks:
 
     def createMatrix(A,B,h,mode):
@@ -460,7 +530,10 @@ class Benchmarks:
         done'''
 
         n1=np.size(A,0)
-        n2=np.size(B,1)
+        if (np.size(B)>0):
+            n2=np.size(B,1)
+        else:
+            n2=0
         n=n1+n2
         C=np.zeros((n,n),dtype=np.float128)
         if mode=='+':
@@ -876,11 +949,14 @@ class Benchmarks:
         h=0.01
         mode='.'
 
-class BenchmarkVerify:
+class Verify:
 
     def verifyTemplate(At,Bt,h,mode,f,v,T,initset,uV,uP,strName):
         A=Benchmarks.createMatrix(At,Bt,h,mode)
-        n=np.size(At,1)+np.size(Bt,1)
+        if (np.size(Bt)>0):
+                n=np.size(At,1)+np.size(Bt,1)
+        else:
+                n=np.size(At,1)+0
         start_time = time.time()
         inp=InputFormation(A,n,f)
         '''print(A)
@@ -913,6 +989,41 @@ class BenchmarkVerify:
         else:
             print("Can't be verified!!")
 
+    def verifyTemplateNonVerbose(At,Bt,h,mode,f,v,T,initset,uV,uP):
+
+        report={
+        "flg":False,
+        "flag":False,
+        "end_time":0
+        }
+        A=Benchmarks.createMatrix(At,Bt,h,mode)
+        if (np.size(Bt)>0):
+                n=np.size(At,1)+np.size(Bt,1)
+        else:
+                n=np.size(At,1)+0
+        start_time = time.time()
+        inp=InputFormation(A,n,f)
+        dyn=Dynamics(inp.formMatA(),n,f)
+        rg=StructLME([dyn.findConstStr()]+dyn.findVarBlkStr())
+        if (rg.isCondSAT()):
+            flg=True
+            for i in range(1,int(T/h)+1):
+                dynRepA=DynamicsRepOp(dyn.findConstMat(),dyn.findVarBlkMats(),dyn.dimension)
+                reach=CalcReachableSet(dynRepA,i,initset,f,v,uV,uP)
+                flag=reach.isFeasible()
+                end_time=time.time() - start_time
+                if flag==True:
+                    break
+        else:
+            flg=False
+
+        report["flg"]=flg
+        if flg:
+            report["flag"]=flag
+            report["end_time"]=end_time
+
+        return report
+
     def readFromFile(fname):
         '''A=
         B=
@@ -925,7 +1036,7 @@ class BenchmarkVerify:
         time=
         unsafeState=
         unsafeParam=
-        BenchmarkVerify.verifyTemplate(A,B,h,mode,faults,variance,initialSet,strName,time,unsafeState,unsafeParam)'''
+        Verify.verifyTemplate(A,B,h,mode,faults,variance,initialSet,strName,time,unsafeState,unsafeParam)'''
         tree = ET.parse(fname)
         root = tree.getroot()
         for child in root:
@@ -1001,9 +1112,7 @@ class BenchmarkVerify:
         print(B)
 
         #print(int(time/h)+1)
-        BenchmarkVerify.verifyTemplate(A,B,h,mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
-
-
+        Verify.verifyTemplate(A,B,h,mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def test():
         faults=[(3,3,0,3)]
@@ -1014,7 +1123,7 @@ class BenchmarkVerify:
         time=20
         unsafeState=0
         unsafeParam=0
-        BenchmarkVerify.verifyTemplate(Benchmarks.Test.A,Benchmarks.Test.B,Benchmarks.Test.h,Benchmarks.Test.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+        Verify.verifyTemplate(Benchmarks.Test.A,Benchmarks.Test.B,Benchmarks.Test.h,Benchmarks.Test.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def PKPD2():
         faults=[(0,4,4,1)]
@@ -1026,7 +1135,7 @@ class BenchmarkVerify:
         time=20
         unsafeState=0
         unsafeParam=0
-        BenchmarkVerify.verifyTemplate(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+        Verify.verifyTemplate(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def flightEnvelope():
         faults=[(0,7,10,6)]
@@ -1039,7 +1148,7 @@ class BenchmarkVerify:
         time=20
         unsafeState=0
         unsafeParam=0
-        BenchmarkVerify.verifyTemplate(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+        Verify.verifyTemplate(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def coOPVehiclesI():
         faults=[(0,9,9,1)]
@@ -1050,7 +1159,7 @@ class BenchmarkVerify:
         time=20
         unsafeState=0
         unsafeParam=-26
-        BenchmarkVerify.verifyTemplate(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+        Verify.verifyTemplate(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def coOPVehiclesII():
         faults=[(0,9,9,1)]
@@ -1060,7 +1169,7 @@ class BenchmarkVerify:
         time=20
         unsafeState=0
         unsafeParam=0
-        BenchmarkVerify.verifyTemplate(Benchmarks.CoOPVehiclesII.A,Benchmarks.CoOPVehiclesII.B,Benchmarks.CoOPVehiclesII.h,Benchmarks.CoOPVehiclesII.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+        Verify.verifyTemplate(Benchmarks.CoOPVehiclesII.A,Benchmarks.CoOPVehiclesII.B,Benchmarks.CoOPVehiclesII.h,Benchmarks.CoOPVehiclesII.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def holes():
         faults=[(0, 4, 4, 4)]
@@ -1071,7 +1180,7 @@ class BenchmarkVerify:
         time=20
         unsafeState=0
         unsafeParam=0
-        BenchmarkVerify.verifyTemplate(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+        Verify.verifyTemplate(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def motorTransmission1():
         faults=[(0,4,4,3)]
@@ -1082,7 +1191,7 @@ class BenchmarkVerify:
         time=20
         unsafeState=0
         unsafeParam=0
-        BenchmarkVerify.verifyTemplate(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+        Verify.verifyTemplate(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def motorTransmission2():
         faults=[(2,3,0,2)]
@@ -1092,11 +1201,616 @@ class BenchmarkVerify:
         time=20
         unsafeState=0
         unsafeParam=0
-        BenchmarkVerify.verifyTemplate(Benchmarks.MotorTransmission2.A,Benchmarks.MotorTransmission2.B,Benchmarks.MotorTransmission2.h,Benchmarks.MotorTransmission2.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+        Verify.verifyTemplate(Benchmarks.MotorTransmission2.A,Benchmarks.MotorTransmission2.B,Benchmarks.MotorTransmission2.h,Benchmarks.MotorTransmission2.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+class VerifyFaultFree:
+
+    def verifyTemplateFaultFree(At,Bt,h,mode,T,initset,unsafeV,unsafeP,strName):
+        A=Benchmarks.createMatrix(At,Bt,h,mode)
+        if (np.size(Bt)>0):
+                n=np.size(At,1)+np.size(Bt,1)
+        else:
+                n=np.size(At,1)+0
+        start_time = time.time()
+        for i in range(1,int(T/h)+1):
+            print("\n\n\n\n==============",i)
+            reach=CalcReachableSetFaultFree(A,n,i,initset,unsafeV,unsafeP)
+            flag=reach.isFeasible()
+            end_time=time.time() - start_time
+            if flag==True:
+                break
+            else:
+                flg=False
+
+        print("\n\n------------ Final Report for ",strName,"(Without Any Fault) ------------")
+        print("Safety Status of the system upto time ",T,": ", end=" ")
+        if (flag):
+            print("Unsafe (Counter Example Given above)")
+        else:
+            print("Safe")
+        print("Time Taken: ", end_time)
+
+    def verifyTemplateFaultFreeNonVerbose(At,Bt,h,mode,T,initset,unsafeV,unsafeP):
+        report={
+        "flag":False,
+        "end_time":0
+        }
+        A=Benchmarks.createMatrix(At,Bt,h,mode)
+        if (np.size(Bt)>0):
+                n=np.size(At,1)+np.size(Bt,1)
+        else:
+                n=np.size(At,1)+0
+        start_time = time.time()
+        flg=True
+        for i in range(1,int(T/h)+1):
+            print("\n\n\n\n==============",i)
+            reach=CalcReachableSetFaultFree(A,n,i,initset,unsafeV,unsafeP)
+            flag=reach.isFeasible()
+            end_time=time.time() - start_time
+            if flag==True:
+                break
+            else:
+                flg=False
+
+        report["flag"]=flag
+        report["end_time"]=end_time
+
+        return report
+
+    def readFromFile(fname):
+        tree = ET.parse(fname)
+        root = tree.getroot()
+        for child in root:
+            #print(child.tag,child.text)
+            if (child.tag=='h'):
+                h=float(child.text.strip())
+                print(h)
+            elif (child.tag=='name'):
+                strName=child.text.strip()
+                print(strName)
+            elif (child.tag=='mode'):
+                mode=list(child.text.strip())[0]
+                print(mode)
+            elif (child.tag=='time'):
+                time=int(child.text.strip())
+                print(time)
+            elif (child.tag=='unsafestate'):
+                unsafeState=int(child.text.strip())
+                print(unsafeState)
+            elif (child.tag=='unsafeparam'):
+                unsafeParam=float(child.text.strip())
+                print(unsafeParam)
+            elif (child.tag=='A'):
+                strA=child.text.strip()
+            elif (child.tag=='B'):
+                strB=child.text.strip()
+            elif (child.tag=='initialset'):
+                strIS=child.text.strip()
+
+        initialSet=[]
+        for i in strIS.split('\n'):
+            t=i.strip().split(',')
+            initialSet.append((int(t[0].strip()),int(t[1].strip())))
+        print(initialSet)
+
+        a=[]
+        for row in strA.split('\n'):
+            tmp=row.strip().split(',')
+            l=[]
+            for t in tmp:
+                if (len(t.strip())>0):
+                    l.append(int(t.strip()))
+            a.append(l)
+        A=np.array(a)
+        print(A)
+
+        b=[]
+        print(strB)
+        for row in strB.split('\n'):
+            tmp=row.strip().split(',')
+            l=[]
+            for t in tmp:
+                if (len(t.strip())>0):
+                    l.append(int(t.strip()))
+            b.append(l)
+        B=np.array(b)
+        print(B)
+
+        VerifyFaultFree.verifyTemplateFaultFree(A,B,h,mode,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def test():
+        initialSet=[(-1,1),(-1,1),(-1,1),(-1,1),(-1,1),(-1,1)]
+        strName="Example Model"
+        time=20
+        uV=0
+        uP=0
+        VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.Test.A,Benchmarks.Test.B,Benchmarks.Test.h,Benchmarks.Test.mode,time,initialSet,uV,uP,strName)
+
+    def PKPD2():
+        initialSet=[(1,6),(0,10),(0,10),(1,8),(0,200)]
+        strName="PK/PD Model - II"
+        time=20
+        uV=0
+        uP=0
+        VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,time,initialSet,uV,uP,strName)
+        #VerifyFaultFree.verifyTemplate(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.n1,Benchmarks.PKPD2.n2,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,faults,variance,time,initialSet,[],[],0,strName)
+
+    def flightEnvelope():
+        initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
+        strName="Flight Envelope Model"
+        time=20
+        uV=0
+        uP=0
+        VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,time,initialSet,uV,uP,strName)
+        #VerifyFaultFree.verifyTemplate(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.n1,Benchmarks.FlightEnvelope.n2,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,faults,variance,time,initialSet,[],[],0,strName)
+
+    def coOPVehiclesI():
+        initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(-9,1)]
+        strName="Networked Cooperative Platoon of Vehicles - I"
+        time=20
+        uV=0
+        uP=0
+        VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,time,initialSet,uV,uP,strName)
+        #Benchmarks.verifyTemplateFaultFree(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.n1,Benchmarks.CoOPVehiclesI.n2,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,time,initialSet,strName)
+        #VerifyFaultFree.verifyTemplate(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.n1,Benchmarks.CoOPVehiclesI.n2,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,faults,variance,time,initialSet,[],[],0,strName)
+
+    def coOPVehiclesII():
+        strName="Networked Cooperative Platoon of Vehicles - II"
+        time=20
+        uV=0
+        uP=0
+        VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.CoOPVehiclesII.A,Benchmarks.CoOPVehiclesII.B,Benchmarks.CoOPVehiclesII.h,Benchmarks.CoOPVehiclesII.mode,time,initialSet,uV,uP,strName)
+        #VerifyFaultFree.verifyTemplate(Benchmarks.CoOPVehiclesII.A,Benchmarks.CoOPVehiclesII.B,Benchmarks.CoOPVehiclesII.n1,Benchmarks.CoOBenchmarks.CoOPVehiclesI.n1,Benchmarks.CoOPVehiclesI.n2PVehiclesII.n2,Benchmarks.CoOPVehiclesII.h,Benchmarks.CoOPVehiclesII.mode,faults,variance,time,initialSet,[],[],0,strName)
+
+    def holes():
+        initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(-100,100),(-100,100)]
+        strName="Holes Plant Xp"
+        time=20
+        uV=0
+        uP=0
+        VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,time,initialSet,uV,uP,strName)
+        #VerifyFaultFree.verifyTemplate(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.n1,Benchmarks.HolesPXp.n2,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,faults,variance,time,initialSet,[],[],0,strName)
+
+    def motorTransmission1():
+        initialSet=[(0,0),(-0.08,0.08),(-0.0165,-0.0165),(-0.01,0.01),(0,0),(70,70),(1,1)]
+        strName="Motor Transmission - I"
+        time=20
+        uV=0
+        uP=0
+        VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,time,initialSet,uV,uP,strName)
+        #VerifyFaultFree.verifyTemplate(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.n1,Benchmarks.MotorTransmission1.n2,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,faults,variance,time,initialSet,[],[],0,strName)
+
+    def motorTransmission2():
+        initialSet=[(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0)]
+        strName="Motor Transmission - II"
+        time=20
+        uV=0
+        uP=0
+        VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.MotorTransmission2.A,Benchmarks.MotorTransmission2.B,Benchmarks.MotorTransmission2.h,Benchmarks.MotorTransmission2.mode,faults,variance,time,initialSet,uV,uP,strName)
+
+class Finder:
+    def __init__(self,A,B,h,mode):
+        self.A=A
+        self.B=B
+        self.appxM=self.createMatrix(A,B,h,mode)
+        if (np.size(B)>1):
+            self.n=np.size(A,1)+np.size(B,1)
+        else:
+            self.n=np.size(A,1)+0
+
+    def createMatrix(self,A,B,h,mode):
+        ''' Creates a single matrix based on
+        . or +.
+        In case of . a roungh approximation is
+        done'''
+
+        n1=np.size(A,1)
+        if (np.size(B)>0):
+            n2=np.size(B,1)
+        else:
+            n2=0
+        n=n1+n2
+        C=np.zeros((n,n),dtype=np.float128)
+        if mode=='+':
+            for i in range(n1):
+                for j in range(n1):
+                    C[i][j]=A[i][j]
+            for i in range(n1):
+                j2=0
+                for j in range(n1,n1+n2):
+                    C[i][j]=B[i][j2]
+                    j2=j2+1
+            for i in range(n1,n1+n2):
+                C[i][i]=1
+        elif mode=='.':
+            I=np.zeros((n1,n1),dtype=np.float128)
+            for i in range(n1):
+                I[i][i]=1
+            A2=h*A
+            A2=np.add(I,A2)
+            B2=h*B
+            for i in range(n1):
+                for j in range(n1):
+                    C[i][j]=A2[i][j]
+            for i in range(n1):
+                j2=0
+                for j in range(n1,n1+n2):
+                    C[i][j]=B2[i][j2]
+                    j2=j2+1
+            for i in range(n1,n1+n2):
+                C[i][i]=1
+
+        return C
+
+    def enumAllBlocks(self):
+        '''Enumerates all possible blocks with
+        all possible sizes'''
+
+        for m in range(1,self.n+1):
+            for k in range(1,self.n+1):
+                flt=self.enumBlock(m,k)
+                if flt:
+                    print("\n\n----",m,k,"(Block Size) ----")
+                    print(flt)
+                    print("====================\n")
+                else:
+                    print("Finished ",m,",",k)
+
+    def viewStructLME(self,flt):
+        inp=InputFormation(self.appxM,self.n,flt)
+        dyn=Dynamics(inp.formMatA(),self.n,flt)
+        rg=StructLME([dyn.findConstStr()]+dyn.findVarBlkStr())
+        print(rg.isCondSAT())
+        rg.visualizeStructLME()
+
+    def enumBlock(self,m,k):
+        '''Enumerates possible blocks of
+        size m*k'''
+        l=m
+        b=k
+        fltList=[]
+        for i in range(self.n-l+1):
+            for j in range(self.n-b+1):
+                flt=(i,l,j,b)
+                inp=InputFormation(self.appxM,self.n,[flt])
+                dyn=Dynamics(inp.formMatA(),self.n,[flt])
+                #print(dyn.findConstStr())
+                rg=StructLME([dyn.findConstStr()]+dyn.findVarBlkStr())
+                if (rg.isCondSAT()):
+                    fltList.append(flt)
+                    '''print(flt)
+                    rg.visualizeStructLME()
+                    print('\n')'''
+        fltList=Finder.filterOutInt(fltList)
+        #fltList=[(1,2,3,2),(4,5,6,7),(8,9,10,11),(3,4,5,6)]
+
+        if len(fltList)>0:
+            for n in range(len(fltList),0,-1):
+                for elem in itertools.combinations(fltList,n):
+                    #print(elem)
+                    inp=InputFormation(self.appxM,self.n,elem)
+                    dyn=Dynamics(inp.formMatA(),self.n,elem)
+                    rg=StructLME([dyn.findConstStr()]+dyn.findVarBlkStr())
+                    if (rg.isCondSAT()):
+                        return elem
+
+    def filterOutInt(l):
+        for elem in l:
+            for elem2 in l:
+                if elem!=elem2:
+                    if (Finder.intersection(elem[0],elem[1],elem2[0],elem2[1]) and Finder.intersection(elem[2],elem[3],elem2[2],elem2[3])):
+                        l.remove(elem2)
+        #print(l)
+        return l
+
+    def intersection(x,lx,y,ly):
+        #[[x,lx]] \cap [[y,ly]]
+        if (x<=y):
+            return (x+lx-1 >= y)
+        else:
+            return (y+ly-1 >= x)
+
+class Search:
+
+    def searchTemplate(A,B,h,mode,flt=None):
+        fnd=Finder(A,B,h,mode)
+        print("-----------")
+        if flt==None:
+            fnd.enumAllBlocks()
+        else:
+            fnd.viewStructLME(flt)
+
+    def readFromFile(fname):
+        tree = ET.parse(fname)
+        root = tree.getroot()
+        for child in root:
+            if (child.tag=='h'):
+                h=float(child.text.strip())
+                print(h)
+            elif (child.tag=='mode'):
+                mode=list(child.text.strip())[0]
+                print(mode)
+            elif (child.tag=='faults'):
+                strFault=child.text.strip()
+            elif (child.tag=='A'):
+                strA=child.text.strip()
+            elif (child.tag=='B'):
+                strB=child.text.strip()
+
+        faults=[]
+        for f in strFault.split('\n'):
+            t=f.strip().split(',')
+            #print(t)
+            if (len(t[0].strip())>0):
+                    faults.append((int(t[0].strip()),int(t[1].strip()),int(t[2].strip()),int(t[3].strip())))
+        print(faults)
+
+        a=[]
+        for row in strA.split('\n'):
+            tmp=row.strip().split(',')
+            l=[]
+            for t in tmp:
+                if (len(t.strip())>0):
+                    l.append(int(t.strip()))
+            a.append(l)
+        A=np.array(a)
+        print(A)
+
+        b=[]
+        #print(strB)
+        for row in strB.split('\n'):
+            tmp=row.strip().split(',')
+            l=[]
+            for t in tmp:
+                if (len(t.strip())>0):
+                    l.append(int(t.strip()))
+            b.append(l)
+        B=np.array(b)
+        print(B)
+
+        if (faults==[]):
+            faults=None
+        Search.searchTemplate(A,B,h,mode,faults)
+
+    def madeUp(flt=None):
+        Search.searchTemplate(Benchmarks.Test.A,Benchmarks.Test.B,Benchmarks.Test.h,Benchmarks.Test.mode,flt)
+
+    def flightEnvelope(flt=None):
+        Search.searchTemplate(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,flt)
+
+    def dcConverter(flt=None):
+        Search.searchTemplate(Benchmarks.DCConv.A,Benchmarks.DCConv.B,Benchmarks.DCConv.h,Benchmarks.DCConv.mode,flt)
+
+    def fiveVehiclePlatoon(flt=None):
+        Search.searchTemplate(Benchmarks.FiveVehiclePlatton.A,Benchmarks.FiveVehiclePlatton.B,Benchmarks.FiveVehiclePlatton.h,Benchmarks.FiveVehiclePlatton.mode,flt)
+
+    def tenVehiclePlatoon(flt=None):
+        Search.searchTemplate(Benchmarks.TenVehiclePlatton.A,Benchmarks.TenVehiclePlatton.B,Benchmarks.TenVehiclePlatton.h,Benchmarks.TenVehiclePlatton.mode,flt)
+
+    def coOPVehicles(flt=None):
+        Search.searchTemplate(Benchmarks.CoOPVehicles.A,Benchmarks.CoOPVehicles.B,Benchmarks.CoOPVehicles.h,Benchmarks.CoOPVehicles.mode,flt)
+
+    def pkpd(flt=None):
+        Search.searchTemplate(Benchmarks.PKPD.A,Benchmarks.PKPD.B,Benchmarks.PKPD.h,Benchmarks.PKPD.mode,flt)
+
+    def pkpd2(flt=None):
+        Search.searchTemplate(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,flt)
+
+    def spaceCraftRndzvs(flt=None):
+        Search.searchTemplate(Benchmarks.SpaceCraftRndzvs.A,Benchmarks.SpaceCraftRndzvs.B,Benchmarks.SpaceCraftRndzvs.h,Benchmarks.SpaceCraftRndzvs.mode,flt)
+
+    def holesCXc(flt=None):
+        Search.searchTemplate(Benchmarks.HolesCXc.A,Benchmarks.HolesCXc.B,Benchmarks.HolesCXc.h,Benchmarks.HolesCXc.mode,flt)
+
+    def holesPDp(flt=None):
+        Search.searchTemplate(Benchmarks.HolesPDp.A,Benchmarks.HolesPDp.B,Benchmarks.HolesPDp.h,Benchmarks.HolesPDp.mode,flt)
+
+    def holesPXp(flt=None):
+        Search.searchTemplate(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,flt)
+
+    def motorTransmission1(flt=None):
+        Search.searchTemplate(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,flt)
+
+    def motorTransmission2(flt=None):
+        Search.searchTemplate(Benchmarks.MotorTransmission2.A,Benchmarks.MotorTransmission2.B,Benchmarks.MotorTransmission2.h,Benchmarks.MotorTransmission2.mode,flt)
+
+class ConsolidatedVerificationReport:
+    #Under Construction
+    def conVerTemplate(At,Bt,h,mode,f,v,T,initset,uV,uP,strName):
+        reportWithFault=Verify.verifyTemplateNonVerbose(At,Bt,h,mode,f,v,T,initset,uV,uP)
+        reportWithouFault=VerifyFaultFree.verifyTemplateFaultFreeNonVerbose(At,Bt,h,mode,T,initset,uV,uP)
+
+        print("\n\n------------ Final Report for ",strName,"(With Faults) ------------")
+        print("Satisfies Inf-Linear Conditions: ",reportWithFault["flg"])
+        if (reportWithFault["flg"]==True):
+            print("Safety Status of the system upto time ",T,": ", end=" ")
+            if (reportWithFault["flag"]):
+                print("Unsafe (To get the Counter Example please use Verify.verifyTemplate(...))")
+            else:
+                print("Safe")
+            print("Time Taken: ", reportWithFault["end_time"])
+        else:
+            print("Can't be verified!!")
+
+        print("\n\n------------ Final Report for ",strName,"(Without Any Fault) ------------")
+        print("Safety Status of the system upto time ",T,": ", end=" ")
+        if (reportWithouFault["flag"]):
+            print("Unsafe (To get the Counter Example use VerifyFaultFree.verifyTemplate(...))")
+        else:
+            print("Safe")
+        print("Time Taken: ", reportWithouFault["end_time"])
+
+    def readFromFile(fname):
+        tree = ET.parse(fname)
+        root = tree.getroot()
+        for child in root:
+            #print(child.tag,child.text)
+            if (child.tag=='h'):
+                h=float(child.text.strip())
+                print(h)
+            elif (child.tag=='name'):
+                strName=child.text.strip()
+                print(strName)
+            elif (child.tag=='mode'):
+                mode=list(child.text.strip())[0]
+                print(mode)
+            elif (child.tag=='time'):
+                time=int(child.text.strip())
+                print(time)
+            elif (child.tag=='unsafestate'):
+                unsafeState=int(child.text.strip())
+                print(unsafeState)
+            elif (child.tag=='unsafeparam'):
+                unsafeParam=float(child.text.strip())
+                print(unsafeParam)
+            elif (child.tag=='faults'):
+                strFault=child.text.strip()
+            elif (child.tag=='A'):
+                strA=child.text.strip()
+            elif (child.tag=='B'):
+                strB=child.text.strip()
+            elif (child.tag=='variance'):
+                strVar=child.text.strip()
+            elif (child.tag=='initialset'):
+                strIS=child.text.strip()
+
+        faults=[]
+        for f in strFault.split('\n'):
+            t=f.strip().split(',')
+            faults.append((int(t[0].strip()),int(t[1].strip()),int(t[2].strip()),int(t[3].strip())))
+        print(faults)
+
+        variance=[]
+        for v in strVar.split('\n'):
+            t=v.strip().split(',')
+            variance.append((int(t[0].strip()),int(t[1].strip())))
+        print(variance)
+
+        initialSet=[]
+        for i in strIS.split('\n'):
+            t=i.strip().split(',')
+            initialSet.append((int(t[0].strip()),int(t[1].strip())))
+        print(initialSet)
+
+        a=[]
+        for row in strA.split('\n'):
+            tmp=row.strip().split(',')
+            l=[]
+            for t in tmp:
+                if (len(t.strip())>0):
+                    l.append(int(t.strip()))
+            a.append(l)
+        A=np.array(a)
+        print(A)
+
+        b=[]
+        print(strB)
+        for row in strB.split('\n'):
+            tmp=row.strip().split(',')
+            l=[]
+            for t in tmp:
+                if (len(t.strip())>0):
+                    l.append(int(t.strip()))
+            b.append(l)
+        B=np.array(b)
+        print(B)
+
+        #print(int(time/h)+1)
+        ConsolidatedVerificationReport.conVerTemplate(A,B,h,mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def test():
+        faults=[(3,3,0,3)]
+        #faults=[(2,3,2,3)]
+        variance=[(5,5)]
+        initialSet=[(-1,1),(-1,1),(-1,1),(-1,1),(-1,1),(-1,1)]
+        strName="Example Model"
+        time=20
+        unsafeState=0
+        unsafeParam=0
+        ConsolidatedVerificationReport.conVerTemplate(Benchmarks.Test.A,Benchmarks.Test.B,Benchmarks.Test.h,Benchmarks.Test.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def PKPD2():
+        faults=[(0,4,4,1)]
+        #faults=[(3,1,4,1)]
+        variance=[(5,5)]
+        #initialSet=[(1,6),(0,10),(0,10),(1,8),(0,200)]
+        initialSet=[(1,6),(0,10),(0,10),(1,8),(1,1)]
+        strName="PK/PD Model - II"
+        time=20
+        unsafeState=0
+        unsafeParam=0
+        ConsolidatedVerificationReport.conVerTemplate(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def flightEnvelope():
+        faults=[(0,7,10,6)]
+        #faults=[(0,8,8,8)]
+        variance=[(5,5)]
+        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(5,10),(-0.1,0.1),(-0.1,0.1),(-0.1,0.1)]
+        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(1,1),(1,1),(1,1),(1,1)]
+        initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
+        strName="Flight Envelope Model"
+        time=20
+        unsafeState=0
+        unsafeParam=0
+        ConsolidatedVerificationReport.conVerTemplate(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def coOPVehiclesI():
+        faults=[(0,9,9,1)]
+        variance=[(5,5)]
+        #initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(1,1)]
+        initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
+        strName="Networked Cooperative Platoon of Vehicles - I"
+        time=20
+        unsafeState=0
+        unsafeParam=-26
+        ConsolidatedVerificationReport.conVerTemplate(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def coOPVehiclesII():
+        faults=[(0,9,9,1)]
+        variance=[(5,5)]
+        initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
+        strName="Networked Cooperative Platoon of Vehicles - II"
+        time=20
+        unsafeState=0
+        unsafeParam=0
+        ConsolidatedVerificationReport.conVerTemplate(Benchmarks.CoOPVehiclesII.A,Benchmarks.CoOPVehiclesII.B,Benchmarks.CoOPVehiclesII.h,Benchmarks.CoOPVehiclesII.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def holes():
+        faults=[(0, 4, 4, 4)]
+        variance = [(5,5)]
+        #initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(-100,100),(0,0),(0,0),(-100,100),(-100,100)]
+        initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(-100,-100),(-100,-100)]
+        strName="Holes Plant Xp"
+        time=20
+        unsafeState=0
+        unsafeParam=0
+        ConsolidatedVerificationReport.conVerTemplate(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def motorTransmission1():
+        faults=[(0,4,4,3)]
+        variance = [(5,5)]
+        #initialSet=[(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0),(70,70),(1,1)]
+        initialSet=[(0,0),(-0.08,0.08),(-0.0165,-0.0165),(-0.01,0.01),(0,0),(70,70),(1,1)]
+        strName="Motor Transmission - I"
+        time=20
+        unsafeState=0
+        unsafeParam=0
+        ConsolidatedVerificationReport.conVerTemplate(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
+
+    def motorTransmission2():
+        faults=[(2,3,0,2)]
+        variance = [(5,5)]
+        initialSet=[(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0)]
+        strName="Motor Transmission - II"
+        time=20
+        unsafeState=0
+        unsafeParam=0
+        ConsolidatedVerificationReport.conVerTemplate(Benchmarks.MotorTransmission2.A,Benchmarks.MotorTransmission2.B,Benchmarks.MotorTransmission2.h,Benchmarks.MotorTransmission2.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
 
-
-
-#BenchmarkVerify.coOPVehiclesI()
-BenchmarkVerify.readFromFile("test-input1.xml")
-#BenchmarkVerify.test()
+#Verify.readFromFile("test-input2.xml")
+#Search.flightEnvelope()
+#Search.readFromFile("test-input2.xml")
+#VerifyFaultFree.readFromFile("test-input2.xml")
+#Search.madeUp()
+ConsolidatedVerificationReport.readFromFile("test-input2.xml")

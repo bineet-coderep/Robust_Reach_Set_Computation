@@ -102,7 +102,19 @@ _Inherits class ``Structure``_
 
 * `getAllFaultyCells()`: Returns the list of cells which correspond to some faulty variable.
 * `indexofBlk(i,j)`: Returns the index of the block support (represented in the field `faults`) corresponding to the cell `(i,j)`.
-* `isFeasible():` Returns `True` if the **Hard Coded** unsafe condition is satisfied by the reached set given by A^k starting from the initial set as given in `initialSet`. 
+* `isFeasible():` Returns `True` if the unsafe condition (the value of the `unsafe-state` th state variable is less than equals `unsafe-param`) is satisfied by the reached set given by A^k starting from the initial set as given in `initialSet`. 
+
+
+
+## Class CalcReachableSetFaultFree
+
+### Constructor
+
+- `CalcReachableSetFaulFree(DynamicsReOp A, int n, int k, list initialSet, int unsafe-state, float unsafe-param)`: `int n` is the dimension of `A`, `list initialSet` is an ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index. The last two parameters correspond to unsafe condition check; _i.e._ the state number `unsafe-state` is less than equals the value `unsafe-param`
+
+### Methods
+
+- `isFeasible():` Returns `True` if the unsafe condition (the value of the `unsafe-state` th state variable is less than equals `unsafe-param`) is satisfied by the reached set given by A^k starting from the initial set as given in `initialSet`. 
 
 
 
@@ -119,11 +131,11 @@ Each class representing a Benchmark should have following fields:
 
 
 
-## Class BenchmarkVerify
+## Class Verify
 
 ### Methods
 
-* `verifyTemplate(Matrix A,Matrix B,int n1,int n2,int h,char mode,list f,list v,int T,list initset,int uS,float uC,String strName)`:  Displays the _'Final Verification Report'_  (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+* `verifyTemplate(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC,String strName)`:  Displays the _'Final Verification Report'_  (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
   * `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
   * `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
   * `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
@@ -135,9 +147,96 @@ Each class representing a Benchmark should have following fields:
   * `int uS`: The state number for which the unsafe condition is to be checked.
   * `float uC`: The unsafe state `uS` should be less than equals `uC`.
   * `String strName`: Name of the Benchmark.
-
+* `verifyTemplate(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC)`:  Returns a dictionary with the _'Final Verification Report'_  (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+  - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
+  - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
+  - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
+  - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
+  - `list f`: List of blocks with uncertainties, represented with the tuple `(startrow,length,startcol,breadth)` 
+  - `list v`: An ordered list of integers which denotes the percentage, the uncertain variable at that index can vary.
+  - `int T`: Time up to which verification of the system is desired.
+  - `list initset`: An ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index.
+  - `int uS`: The state number for which the unsafe condition is to be checked.
+  - `float uC`: The unsafe state `uS` should be less than equals `uC`.
 * `readFromFile(String fname)`: Displays the _'Final Verification Report'_ of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`
-* **Other methods are also available for Inbuilt Benchmark Verification**
+* **Other methods are also available Inbuilt for various Benchmark Verification**
+
+
+
+## Class VerifyFaultFree
+
+### Methods
+
+- `verifyTemplateFaultFree(Matrix A,Matrix B,int h,char mode,int T,list initset,int uS,float uC,String strName)`:  Displays the _'Final Verification Report'_  without any uncertainty (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+  - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
+  - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
+  - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
+  - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
+  - `int T`: Time up to which verification of the system is desired.
+  - `list initset`: An ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index.
+  - `int uS`: The state number for which the unsafe condition is to be checked.
+  - `float uC`: The unsafe state `uS` should be less than equals `uC`.
+  - `String strName`: Name of the Benchmark.
+- `verifyTemplateFaultFreeNonVerbose(Matrix A,Matrix B,int h,char mode,int T,list initset,int uS,float uC)`:  Returns a dictionary with the _'Final Verification Report'_  without any uncertainty (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+  - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
+  - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
+  - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
+  - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
+  - `int T`: Time up to which verification of the system is desired.
+  - `list initset`: An ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index.
+  - `int uS`: The state number for which the unsafe condition is to be checked.
+  - `float uC`: The unsafe state `uS` should be less than equals `uC`.
+- `readFromFile(String fname)`: Displays the _'Final Verification Report'_ without any uncertainty of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`
+- **Other methods are also available Inbuilt for various Benchmark Verification**
+
+
+
+## Class Finder
+
+### Constructor
+
+* `Finder(Matrix A, Matrix B, float h, char mode)`: `Matrix A` and `Matrix B`  defines a dynamics of the form Ax+B, where `mode` is either `+` (Discrete) or `.` (Continuous). And `float h` is the discretization step size.
+
+### Methods
+
+* `enumAllBlocks()`: Returns a list enumerating all possible blocks (of all sizes) that satisfies the sufficient conditions mentioned in the paper. 
+* `viewStructLME()`: Displays the structure of LMEs and if it satisfies the conditions mentioned in the paper.
+* `enumBlock(m,k)`: Returns a list enumerating all possible blocks of size `m*k` that satisfies the sufficient conditions mentioned in the paper.
+
+
+
+## Class Search
+
+### Methods
+
+* `searchTemplate(Matrix A, Matrix B, float h, char mode)`:  Displays the _'Blocks Satisfying the Conditions mentioned in the Paper'_  (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+  - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
+  - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
+  - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
+  - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
+* `readFromFile(String fname)`: Displays the _'Blocks Satisfying the Conditions mentioned in the Paper'_  of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`
+* **Other methods are also available inbuilt for Finding Blocks in various Benchmarks** 
+
+
+
+## Class ConsolidatedVerificationReport
+
+### Methods
+
+* `conVerTemplate(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC,String strName)`: Displays the _'Final Verification Report'_  with and without uncertainty (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+  - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
+  - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
+  - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
+  - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
+  - `int T`: Time up to which verification of the system is desired.
+  - `list initset`: An ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index.
+  - `int uS`: The state number for which the unsafe condition is to be checked.
+  - `float uC`: The unsafe state `uS` should be less than equals `uC`.
+  - `String strName`: Name of the Benchmark.
+* `readFromFile(String fname)`: Displays the _'Final Verification Report'_  with and without any uncertainty of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`
+* **Other methods are also available Inbuilt for various Benchmark Verification**
+
+
 
 
 
