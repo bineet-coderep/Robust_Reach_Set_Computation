@@ -1,8 +1,8 @@
 # Robust Reachable Set Computation
 
 Based on the paper: 
-_Robust Reachable Set: Accounting for Uncertainties in Linear Dynamical Systems_ 
-by Bineet Ghosh and Parasara Sridhar Duggirala. (_EMSOFT 2019, To appear_)
+
+_Robust Reachable Set: Accounting for Uncertainties in Linear Dynamical Systems_ by Bineet Ghosh and Parasara Sridhar Duggirala. (_EMSOFT 2019, To appear_)
 
 
 
