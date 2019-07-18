@@ -11,8 +11,6 @@ should run without any error and display
 
 import numpy as np
 import itertools
-import multiprocessing
-import multiprocessing.pool
 import time
 import math
 from gurobipy import *

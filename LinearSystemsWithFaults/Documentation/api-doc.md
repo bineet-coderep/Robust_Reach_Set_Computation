@@ -1,6 +1,6 @@
 # API Documentation - Uncertain Linear System Verifier
 
-
+The API python file can be found in `/LinearSystemsWithFaults/VerificationEngine/RobustReachSetAPI.py` ([link](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults//VerificationEngine/RobustReachSetAPI.py))
 
 ## Class Structure
 
@@ -76,6 +76,8 @@ _Inherits class ``Structure``_
 
 * `displayA()`: Displays the Linear Matrix Expression.
 * `power(int k)`: Calculates the A^k as given in the paper; where A is the matrix corresponding to the LME. Returns a `list` representing the LME.
+* `power(int k)`: Calculates the A^k as given in the paper; where A is the matrix corresponding to the LME. Returns a `list` representing the LME.
+* `powerTimeVarying(int k, int n)`: Calculates the A^k as given in the paper for time-varying perturbation; where A is the matrix corresponding to the LME and `n` is the number of steps after which the perturbation range changes . Returns a `list` representing the LME.
 
 
 
@@ -103,6 +105,21 @@ _Inherits class ``Structure``_
 * `getAllFaultyCells()`: Returns the list of cells which correspond to some faulty variable.
 * `indexofBlk(i,j)`: Returns the index of the block support (represented in the field `faults`) corresponding to the cell `(i,j)`.
 * `isFeasible():` Returns `True` if the unsafe condition (the value of the `unsafe-state` th state variable is less than equals `unsafe-param`) is satisfied by the reached set given by A^k starting from the initial set as given in `initialSet`. 
+
+
+
+## Class CalcReachableSetTimeVarying
+
+### Constructor
+
+- `CalcReachableSetTimeVarying(DynamicsReOp A, int k, list initialSet, list fault, list perturbation, int unsafe-state, float unsafe-param, int t)`: `list initialSet` is an ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index. `list fault` is the list of blocks with uncertainties, represented using the tuple `(startrow,length,startcol,breadth)`. `list perturbation` is  an ordered list of list of tuple of the form `(int min, int max)` representing the range of values it can take at each time step, corresponding to the faulty variable (`list fault`) at the same index. The last two parameters correspond to unsafe condition check; _i.e._ the state number `unsafe-state` is less than equals the value `unsafe-param`. `t` is number of step after which the perturbation varies.
+
+### Methods
+
+- `getAllFaultyCells()`: Returns the list of cells which correspond to some faulty variable.
+- `indexofBlk(i,j)`: Returns the index of the block support (represented in the field `faults`) corresponding to the cell `(i,j)`.
+- `isFeasible():` Returns `True` if the unsafe condition (the value of the `unsafe-state` th state variable is less than equals `unsafe-param`) is satisfied by the reached set given by A^k starting from the initial set as given in `initialSet`. 
+- `isFeasible:` Returns `True` if the unsafe condition (the value of the `unsafe-state` th state variable is less than equals `unsafe-param`) is satisfied by the reached set given by A^k starting from the initial set as given in `initialSet` with the time-varying faults as given by `perturbation`.
 
 
 
@@ -147,19 +164,46 @@ Each class representing a Benchmark should have following fields:
   * `int uS`: The state number for which the unsafe condition is to be checked.
   * `float uC`: The unsafe state `uS` should be less than equals `uC`.
   * `String strName`: Name of the Benchmark.
-* `verifyTemplate(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC)`:  Returns a dictionary with the _'Final Verification Report'_  (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+* `verifyTemplateNonVerbose(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC)`:  Returns a dictionary with the _'Final Verification Report'_  (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
   - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
   - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
   - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
   - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
   - `list f`: List of blocks with uncertainties, represented with the tuple `(startrow,length,startcol,breadth)` 
-  - `list v`: An ordered list of integers which denotes the percentage, the uncertain variable at that index can vary.
+  - `list v`: An ordered list of tuple which denotes the range, the uncertain variable at that index can vary.
   - `int T`: Time up to which verification of the system is desired.
   - `list initset`: An ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index.
   - `int uS`: The state number for which the unsafe condition is to be checked.
   - `float uC`: The unsafe state `uS` should be less than equals `uC`.
-* `readFromFile(String fname)`: Displays the _'Final Verification Report'_ of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`
-* **Other methods are also available Inbuilt for various Benchmark Verification**
+* `verifyTemplateTimeVarying(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC,String strName, int s)`:  Displays the _'Final Verification Report'_  (Explained in `how-to-use.md`) of the dynamics with the given parameters for time-varying perturbation. Following are explanation of the parameters:
+  - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
+  - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
+  - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
+  - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
+  - `list f`: List of blocks with uncertainties, represented with the tuple `(startrow,length,startcol,breadth)` 
+  - `list v`: An ordered list of list of tuple which denotes the range of perturbations at every time-step for each uncertain variable. 
+  - `int T`: Time up to which verification of the system is desired.
+  - `list initset`: An ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index.
+  - `int uS`: The state number for which the unsafe condition is to be checked.
+  - `float uC`: The unsafe state `uS` should be less than equals `uC`.
+  - `String strName`: Name of the Benchmark.
+  - `int s`: The perturbation will vary after `s` steps according to `list v`.
+* `verifyTemplateTimeVaryingNonVerbose(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC,String strName, int s)`:  Returns a dictionary with the _'Final Verification Report'_  (Explained in `how-to-use.md`) of the dynamics with the given parameters for time-varying perturbations. Following are explanation of the parameters:
+  - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
+  - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
+  - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
+  - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
+  - `list f`: List of blocks with uncertainties, represented with the tuple `(startrow,length,startcol,breadth)` 
+  - `list v`: An ordered list of list of tuple which denotes the range of perturbations at every time-step for each uncertain variable. 
+  - `int T`: Time up to which verification of the system is desired.
+  - `list initset`: An ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index.
+  - `int uS`: The state number for which the unsafe condition is to be checked.
+  - `float uC`: The unsafe state `uS` should be less than equals `uC`.
+  - `String strName`: Name of the Benchmark.
+  - `int s`: The perturbation will vary after `s` steps according to `list v`.
+* `readFromFile(String fname)`: Displays the _'Final Verification Report'_ of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`.
+* `readFromFileTimeVarying(String fname)`: Displays the _'Final Verification Report'_ of the dynamics as given in the input XML file `fname` for time-varying perturbation. Format of the input file is explained in `how-to-use.md`
+* **Other methods are also available inbuilt, for various Benchmark Verification**. Inbuilt methods are available for both constant and time-varying noise as well. Method names with <benchmark> are to verify the benchmark with a constant perturbation whereas Method names with <benchmark> followed by `TimeVarying` are to verify with time-varying noise.
 
 
 
@@ -223,7 +267,7 @@ Each class representing a Benchmark should have following fields:
 
 ### Methods
 
-* `conVerTemplate(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC,String strName)`: Displays the _'Final Verification Report'_  with and without uncertainty (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+* `conVerTemplate(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC,String strName)`: Displays the _'Final Verification Report'_  with constant uncertainty and without uncertainty (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
   - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
   - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
   - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
@@ -233,8 +277,20 @@ Each class representing a Benchmark should have following fields:
   - `int uS`: The state number for which the unsafe condition is to be checked.
   - `float uC`: The unsafe state `uS` should be less than equals `uC`.
   - `String strName`: Name of the Benchmark.
-* `readFromFile(String fname)`: Displays the _'Final Verification Report'_  with and without any uncertainty of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`
-* **Other methods are also available Inbuilt for various Benchmark Verification**
+* `conVerTemplateTimeVarying(Matrix A,Matrix B,int h,char mode,list f,list v,int T,list initset,int uS,float uC,String strName, int step)`: Displays the _'Final Verification Report'_  with Time-Varying uncertainty and without uncertainty (Explained in `how-to-use.md`) of the dynamics with the given parameters. Following are explanation of the parameters:
+  - `Matrix A`: A `numpy` square array representing A of the given dynamics of the form Ax+B.
+  - `Matrix B`: A `numpy` 2-D array representing B of the given dynamics of the form Ax+B.
+  - `char mode`: It can take values from the set `{'+','.'}`. `'+'` represents the given dynamics is discrete and `'.'` represents the given dynamics is continuous. 
+  - `int h`: If the given dynamics is continuous, then `h` is the step size used for discretizing it. 
+  - `int T`: Time up to which verification of the system is desired.
+  - `list initset`: An ordered list of tuple of the form `(int min, int max)` representing the range of value for the state variable at that index.
+  - `int uS`: The state number for which the unsafe condition is to be checked.
+  - `float uC`: The unsafe state `uS` should be less than equals `uC`.
+  - `String strName`: Name of the Benchmark.
+  - `int Step`: Number of steps after which the range of perturbation changes.
+* `readFromFile(String fname)`: Displays the _'Final Verification Report'_  with constant uncertainty and without any uncertainty of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`
+* `readFromFileTimevarying(String fname)`: Displays the _'Final Verification Report'_  with Time-varying uncertainty and without any uncertainty of the dynamics as given in the input XML file `fname`. Format of the input file is explained in `how-to-use.md`
+* **Other methods are also available Inbuilt for various Benchmark Verification (with both Time-varying and constant perturbations)**
 
 
 
