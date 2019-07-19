@@ -2,7 +2,7 @@
 Author: Bineet Ghosh, under supervision of Prof. Sridhar
 Email: ghosh.bineet22@gmail.com
 
-Code Freeze Date:
+Code Freeze Date: July 19, 2019
 
 Based on the paper:
 'Robust Reachable Set: Accounting for Uncertainties in Linear Dynamical Systems'
@@ -19,7 +19,7 @@ Please refer to the README.md to use or modify these APIs.
 The main Verification Engine is: uncertain-system-verifier.py
 which uses these APIs
 
-Link to the repository: <>
+Link to the repository: https://github.com/bineet-coderep/Robust_Reach_Set_Computation
 '''
 
 import numpy as np

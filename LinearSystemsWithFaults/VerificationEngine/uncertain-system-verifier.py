@@ -2,7 +2,7 @@
 Author: Bineet Ghosh, under supervision of Prof. Sridhar
 Email: ghosh.bineet22@gmail.com
 
-Code Freeze Date:
+Code Freeze Date: July 19, 2019
 
 Based on the paper:
 'Robust Reachable Set: Accounting for Uncertainties in Linear Dynamical Systems'
@@ -16,7 +16,7 @@ with time or varying), this engine can verfify the safety of such systems effici
 
 Please refer to the README.md to use or modify this Verification Engine.
 
-Link to the repository: <>
+Link to the repository: https://github.com/bineet-coderep/Robust_Reach_Set_Computation
 '''
 
 from RobustReachSetAPI import *
