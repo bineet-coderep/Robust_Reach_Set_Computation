@@ -24,8 +24,7 @@ from RobustReachSetAPI import *
 
 # Please call APIs as per how-to-use.md here:
 
-#Verify.flightEnvelope()
-
+#Verify.flightEnvelopeTimeVarying()
 
 #-------------------------------------------------------
 

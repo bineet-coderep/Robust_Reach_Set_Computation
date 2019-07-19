@@ -2,7 +2,7 @@
 Author: Bineet Ghosh, under supervision of Prof. Sridhar
 Email: ghosh.bineet22@gmail.com
 
-Code Freeze Date: 
+Code Freeze Date:
 
 Based on the paper:
 'Robust Reachable Set: Accounting for Uncertainties in Linear Dynamical Systems'
@@ -94,8 +94,6 @@ class BlockStructure(Structure):
         return l
 
 
-    #def generateAll()
-
 class StructLME:
     '''Represents the list of Structures
     corresponding to all the variables i.e. N_i
@@ -130,11 +128,7 @@ class StructLME:
                 if (U[i][j]==0 and self.vertices[0].matrix[i][j]!=0):
                     return False
 
-        '''print(U)
-        print(StructLME.isStrClosed(U,self.vertices[1].size))
-        exit(0)'''
         return StructLME.isStrClosed(U,self.vertices[1].size)
-        #return StructLME.isStrClosed(self.vertices[0].matrix,self.vertices[0].size)
 
     @staticmethod
     def isStrClosed(U,n):
@@ -144,7 +138,6 @@ class StructLME:
                 if U[i][j]==0 and U2[i][j]!=0:
                     return False
 
-        #print(U)
         return True
 
     def visualizeStructLME(self):
@@ -319,9 +312,6 @@ class DynamicsRepOp:
         for i in range(0,len(self.varNs)):
             varMs.append([self.varNs[i]])
 
-        '''for i in range(0,len(self.varNs)):
-            print (varMs[i][0])'''
-
         crntTime=1
         for pow in range(0,k):
             #Multiply two LMEs
@@ -340,9 +330,6 @@ class DynamicsRepOp:
                     varMs[i].append(np.matmul(M0,self.varNs[i]))
             M0=np.matmul(M0,self.N0)
 
-            '''for i in range(0,len(self.varNs)):
-                print (len(varMs[i]))'''
-
         return [M0]+varMs
 
 class InputFormation:
@@ -351,7 +338,6 @@ class InputFormation:
         self.dynA=A
         self.dimension=n
         self.vars=v
-        #self.variance=vrnc
 
     def formMatA(self):
         f=self.getAllFaultyCells()
@@ -369,35 +355,6 @@ class InputFormation:
                     l.append((i,j))
         return l
 
-    '''def perturbations(self):
-        pr=[]
-        for i in range(len(self.vars)):
-            mn=self.minimumInCells(i)
-            mx=self.maximumInCells(i)
-            t1=mn-((mn*self.variance[i])/100)
-            t2=mx+((mx*self.variance[i])/100)
-            print((min(t1,t2),max(t1,t2)))
-            pr.append((min(t1,t2),max(t1,t2)))
-        #pr=[(-0.0000001,0)]
-        return pr
-
-    def minimumInCells(self,v):
-        e=self.vars[v]
-        mn=9999999
-        for i in range(e[0],e[0]+e[1]):
-            for j in range(e[2],e[2]+e[3]):
-                if self.dynA[i][j]<mn:
-                    mn=self.dynA[i][j]
-        return mn
-
-    def maximumInCells(self,v):
-        e=self.vars[v]
-        mx=-9999999
-        for i in range(e[0],e[0]+e[1]):
-            for j in range(e[2],e[2]+e[3]):
-                if self.dynA[i][j]>mx:
-                    mx=self.dynA[i][j]
-        return mx'''
 
 class CalcReachableSet:
 
@@ -429,11 +386,6 @@ class CalcReachableSet:
 
         flag=True
         model = Model("qp")
-        #print(self.perturbations[0])
-        #exit(0)
-        #self.perturbations[0]=(0,0.6)
-        #print(self.perturbations[0])
-        #exit(0)
         #model.Params.BarHomogeneous=1
         #model.Params.NumericFocus=3
 
@@ -469,20 +421,18 @@ class CalcReachableSet:
                 if (i,j) in self.getAllFaultyCells():
                     indx=self.indexOfBlk(i,j)
                     obj=obj+((self.matAk[0][i][j]+self.matAk[indx+1][i][j]*faultVars[indx])*dynVars[j])
-                    #obj=obj+(self.matAk.inpA[i][j]*faultVars[self.indexOfBlk(i,j)]*dynVars[j])
                 else:
                     obj=obj+(self.matAk[0][i][j]*dynVars[j])
             rVars.append(obj)
 
 
-        model.addConstr(rVars[self.unsafeVariable]>=self.unsafeParam)
+        model.addConstr(rVars[self.unsafeVariable]<=self.unsafeParam)
 
         #Produce Objectives
 
         model.setObjective(rVars[self.unsafeVariable])
         model.optimize()
-        #print(rVars[0])
-        #exit()
+
         status = model.Status
         if status==GRB.Status.UNBOUNDED:
             print("UNBOUNDED ")
@@ -533,17 +483,10 @@ class CalcReachableSetTimeVarying:
 
         flag=True
         model = Model("qp")
-        #print(self.perturbations[0])
-        #exit(0)
-        #self.perturbations[0]=(0,0.6)
-        #print(self.perturbations[0])
-        #exit(0)
+
         #model.Params.BarHomogeneous=1
         #model.Params.NumericFocus=3
 
-        #create variables
-        #print(self.matAk[1])
-        #exit(0)
         faultVars=[]
         timeV=len(self.matAk[1])
         for i in self.faults:
@@ -576,23 +519,12 @@ class CalcReachableSetTimeVarying:
 
         #Generate Final Equations
         rVars=[]
-        '''for i in range(self.matA.dimension):
-            obj=0
-            for j in range(self.matA.dimension):
-                if (i,j) in self.getAllFaultyCells():
-                    indx=self.indexOfBlk(i,j)
-                    obj=obj+((self.matAk[0][i][j]+self.matAk[indx+1][i][j]*faultVars[indx])*dynVars[j])
-                    #obj=obj+(self.matAk.inpA[i][j]*faultVars[self.indexOfBlk(i,j)]*dynVars[j])
-                else:
-                    obj=obj+(self.matAk[0][i][j]*dynVars[j])
-            rVars.append(obj)'''
 
         for i in range(self.matA.dimension):
             obj=0
             for j in range(self.matA.dimension):
                 if (i,j) in self.getAllFaultyCells():
                     indx=self.indexOfBlk(i,j)
-                    #obj=obj+((self.matAk[0][i][j]+self.matAk[indx+1][i][j]*faultVars[indx])*dynVars[j])
                     obj=obj+self.matAk[0][i][j]
                     for k in range(timeV):
                         obj=obj+(self.matAk[indx+1][k][i][j]*faultVars[indx][k]*dynVars[j])
@@ -607,9 +539,6 @@ class CalcReachableSetTimeVarying:
 
         model.setObjective(rVars[self.unsafeVariable])
         model.optimize()
-        '''print("FS")
-        print(rVars[2])
-        exit()'''
         status = model.Status
         if status==GRB.Status.UNBOUNDED:
             print("UNBOUNDED ")
@@ -644,11 +573,6 @@ class CalcReachableSetFaultFree:
 
         flag=True
         model = Model("lp")
-        #print(self.perturbations[0])
-        #exit(0)
-        #self.perturbations[0]=(0,0.6)
-        #print(self.perturbations[0])
-        #exit(0)
         #model.Params.BarHomogeneous=1
         #model.Params.NumericFocus=3
 
@@ -782,20 +706,7 @@ class Benchmarks:
         mode='+'
 
     class Test:
-        '''A=np.array([
-        [1,0,0,1],
-        [0,0,0,0],
-        [0,0,1,0],
-        [0,0,0,1],
-        ])
-        B=np.array([
-        [1,0],
-        [0,1],
-        [0,0],
-        [0,3],
-        ])
 
-        '''
         A=np.array([
         [1,0,0,0,0,0],
         [1,0,0,0,0,0],
@@ -1173,9 +1084,6 @@ class Verify:
                 n=np.size(At,1)+0
         start_time = time.time()
         inp=InputFormation(A,n,f)
-        '''print(A)
-        print(f)
-        exit(0)'''
         dyn=Dynamics(A,n,f)
         rg=StructLME([dyn.findConstStr()]+dyn.findVarBlkStr())
         if (rg.isCondSAT()):
@@ -1216,7 +1124,7 @@ class Verify:
         if (rg.isCondSAT()):
             flg=True
             for i in range(1,int(T/h)+1):
-                print("\n\n\n\n==============",i)
+                print("\n\n\n\n==============",i+1)
                 dynRepA=DynamicsRepOp(dyn.findConstMat(),dyn.findVarBlkMats(),dyn.dimension)
                 reach=CalcReachableSetTimeVarying(dynRepA,i,initset,f,v,uV,uP,t)
                 flag=reach.isFeasible()
@@ -1309,18 +1217,7 @@ class Verify:
         return report
 
     def readFromFile(fname):
-        '''A=
-        B=
-        h=
-        mode=
-        faults=
-        variance=
-        initialSet=
-        strName=
-        time=
-        unsafeState=
-        unsafeParam=
-        Verify.verifyTemplate(A,B,h,mode,faults,variance,initialSet,strName,time,unsafeState,unsafeParam)'''
+
         tree = ET.parse(fname)
         root = tree.getroot()
         for child in root:
@@ -1395,22 +1292,10 @@ class Verify:
         B=np.array(b)
         print(B)
 
-        #print(int(time/h)+1)
         Verify.verifyTemplate(A,B,h,mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def readFromFileTimeVarying(fname):
-        '''A=
-        B=
-        h=
-        mode=
-        faults=
-        variance=
-        initialSet=
-        strName=
-        time=
-        unsafeState=
-        unsafeParam=
-        Verify.verifyTemplate(A,B,h,mode,faults,variance,initialSet,strName,time,unsafeState,unsafeParam)'''
+
         tree = ET.parse(fname)
         root = tree.getroot()
         for child in root:
@@ -1490,12 +1375,10 @@ class Verify:
         B=np.array(b)
         print(B)
 
-        #print(int(time/h)+1)
         Verify.verifyTemplateTimeVarying(A,B,h,mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName,step)
 
     def illustExample():
         faults=[(1,2,5,2),(3,2,5,2)]
-        #faults=[(2,3,2,3)]
         variance=[(-0.01,0.01),(-0.02,0.02)]
         initialSet=[(1,2),(1,2),(3,4),(4,5),(4,5),(3,3),(2,2),(1,1)]
         strName="Illustrative Example Model"
@@ -1506,7 +1389,6 @@ class Verify:
 
     def illustExample2():
         faults=[(0,1,1,1),(0,1,2,1)]
-        #faults=[(2,3,2,3)]
         variance=[(-0.01,0.01),(-0.02,0.02)]
         initialSet=[(1,2),(2,2),(3,3),(1,1)]
         strName="Illustrative Example Model"
@@ -1517,7 +1399,6 @@ class Verify:
 
     def test():
         faults=[(3,3,0,3)]
-        #faults=[(2,3,2,3)]
         variance=[(5,5)]
         initialSet=[(-1,1),(-1,1),(-1,1),(-1,1),(-1,1),(-1,1)]
         strName="Example Model"
@@ -1528,7 +1409,6 @@ class Verify:
 
     def testTimevarying():
         faults=[(3,3,0,3)]
-        #faults=[(2,3,2,3)]
         variance=[[(5,5),(1,1)]]
         initialSet=[(-1,1),(-1,1),(-1,1),(-1,1),(-1,1),(-1,1)]
         strName="Example Model (Time Varying)"
@@ -1540,9 +1420,7 @@ class Verify:
 
     def PKPD2():
         faults=[(0,4,4,1)]
-        #faults=[(3,1,4,1)]
-        variance=[(5,5)]
-        #initialSet=[(1,6),(0,10),(0,10),(1,8),(0,200)]
+        variance=[(-1000,2000)]
         initialSet=[(1,6),(0,10),(0,10),(1,8),(1,1)]
         strName="PK/PD Model - II"
         time=20
@@ -1552,8 +1430,6 @@ class Verify:
 
     def PKPD2TimeVarying():
         faults=[(0,4,4,1)]
-        #faults=[(3,1,4,1)]
-        #variance=[[(-1000,1002),(1,1),(0.1,1.9),(-1000,1002),(-1000,1002),(-1,2),(-2,3),(-100,102),(0.8,1.2),(0.5,1.5),(-1,2),(0.1,1.9),(-1,2),(0.5,1.5),(0.6,0.4),(0.8,1.2),(0.7,1.3),(-1,2),(0.8,1.2),(0.5,1.5)]]
         variance=[[(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000)]]
         initialSet=[(1,6),(0,10),(0,10),(1,8),(1,1)]
         var=30
@@ -1564,28 +1440,12 @@ class Verify:
         Verify.verifyTemplateTimeVarying(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName,var)
 
     def flightEnvelope():
-        '''faults=[(0,7,10,6)]
-        #faults=[(0,8,8,8)]
-        variance=[(5,5)]
-        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(5,10),(-0.1,0.1),(-0.1,0.1),(-0.1,0.1)]
-        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(1,1),(1,1),(1,1),(1,1)]
-        initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
+
+        initialSet=[(3,4),(3,4),(3,4),(3,4),(3,4),(3,5),(-0.50,0.50),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Flight Envelope Model"
         time=20
-        unsafeState=0
-        unsafeParam=0
-        Verify.verifyTemplate(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
-        '''
         faults=[(0,6,6,10)]
-        #faults=[(0,8,8,8)]
-        #faults=[(0,2,1,14)]
-        variance=[(1,1)]
-        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(5,10),(-0.1,0.1),(-0.1,0.1),(-0.1,0.1)]
-        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(1,1),(1,1),(1,1),(1,1)]
-        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
-        #initialSet=[(3,4),(3,4),(3,4),(3,4),(3,4),(3,5),(-0.50,0.50),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
-        initialSet=[(3,4),(3,4),(3,4),(3,4),(3,4),(3,5),(-0.5,0.5),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
-        strName="Flight Envelope Model"
+        variance=[(0.87,1.13)]
         time=20
         unsafeState=3
         unsafeParam=-15
@@ -1593,9 +1453,6 @@ class Verify:
 
     def flightEnvelopeTimeVarying():
         faults=[(0,6,6,10)]
-        #faults=[(0,8,8,8)]
-        #faults=[(0,2,1,14)]
-        #variance=[[(0.99,1.01),(0.98,1.02),(1,1),(0.9,1.1),(0.95,1.05),(0.8,1.2),(0.7,1.3),(0.9,1.1),(1,1),(0.99,1.01),(0.95,1.05),(1,1),(0.98,1.02),(0.8,1.2),(1,1),(0.75,1.25),(1,1),(0.9,1.1),(0.7,1.3),(0.9,1.1)]]
         variance=[[(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13)]]
         initialSet=[(3,4),(3,4),(3,4),(3,4),(3,4),(3,5),(-0.50,0.50),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Flight Envelope Model (Time-Varying Perturbation)"
@@ -1609,7 +1466,6 @@ class Verify:
     def coOPVehiclesI():
         faults=[(0,9,9,1)]
         variance=[(5,5)]
-        #initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(1,1)]
         initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Networked Cooperative Platoon of Vehicles - I"
         time=20
@@ -1618,18 +1474,17 @@ class Verify:
         Verify.verifyTemplate(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def coOPVehiclesII():
-        faults=[(0,9,9,1)]
-        variance=[(5,5)]
         initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Networked Cooperative Platoon of Vehicles - II"
         time=20
+        faults=[(0,9,9,1)]
+        variance=[(0.1,1.9)]
         unsafeState=0
-        unsafeParam=0
+        unsafeParam=1
         Verify.verifyTemplate(Benchmarks.CoOPVehiclesII.A,Benchmarks.CoOPVehiclesII.B,Benchmarks.CoOPVehiclesII.h,Benchmarks.CoOPVehiclesII.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def coOPVehiclesIITimeVarying():
         faults=[(0,9,9,1)]
-        #variance=[[(0.5,1.5),(0.6,1.4),(0.5,1.5),(0.7,1.3),(-1,2),(0.5,1.5),(0.4,0.6),(0.5,1.5),(0.6,1.4),(0.7,1.3),(0.65,1.35),(0.6,1.4),(0.7,1.3),(0.6,1.4),(0.5,1.5),(0.7,1.3),(-1,2),(0.7,1.3),(0.5,1.5),(0.8,1.2)]]
         variance=[[(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9)]]
         initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Networked Cooperative Platoon of Vehicles - II (Time-Varying Perturbation)"
@@ -1642,7 +1497,6 @@ class Verify:
     def holes():
         faults=[(0, 4, 4, 4)]
         variance = [(5,5)]
-        #initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(-100,100),(0,0),(0,0),(-100,100),(-100,100)]
         initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(-100,-100),(-100,-100)]
         strName="Holes Plant Xp"
         time=20
@@ -1651,21 +1505,18 @@ class Verify:
         Verify.verifyTemplate(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def motorTransmission1():
-        faults=[(0,4,4,3)]
-        variance = [(5,5)]
-        #initialSet=[(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         initialSet=[(0,0),(-0.08,0.08),(-0.0165,-0.0165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         strName="Motor Transmission - I"
         time=20
-        unsafeState=0
-        unsafeParam=0
+        faults=[(0,4,4,3)]
+        variance = [(-0.01,1)]
+        unsafeState=2
+        unsafeParam=-0.02
         Verify.verifyTemplate(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def motorTransmission1TimeVarying():
         faults=[(0,4,4,3)]
-        #variance = [[(0.7,1.3),(-0.2,1),(0.01,1.99),(-0.1,1),(0.8,1.2),(-0.3,1),(0.7,1.3),(1,1),(0.8,1.2),(0.6,0.4),(0.65,0.35),(0.8,1.2),(1,1),(1,1.2),(0.7,1),(0.8,1),(1,1.1),(1,1.2),(1,1),(0.9,1.1)]]
         variance = [[(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1)]]
-        #initialSet=[(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         initialSet=[(0,0),(-0.08,0.08),(-0.0165,-0.0165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         var=2
         strName="Motor Transmission - I (Time-Varying Perturbation)"
@@ -1742,7 +1593,6 @@ class VerifyFaultFree:
         tree = ET.parse(fname)
         root = tree.getroot()
         for child in root:
-            #print(child.tag,child.text)
             if (child.tag=='h'):
                 h=float(child.text.strip())
                 print(h)
@@ -1816,22 +1666,20 @@ class VerifyFaultFree:
         VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.Test.A,Benchmarks.Test.B,Benchmarks.Test.h,Benchmarks.Test.mode,time,initialSet,uV,uP,strName)
 
     def PKPD2():
-        initialSet=[(1,6),(0,10),(0,10),(1,8),(0,200)]
+        initialSet=[(1,6),(0,10),(0,10),(1,8),(1,1)]
         strName="PK/PD Model - II"
         time=20
         uV=0
         uP=0
         VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,time,initialSet,uV,uP,strName)
-        #VerifyFaultFree.verifyTemplate(Benchmarks.PKPD2.A,Benchmarks.PKPD2.B,Benchmarks.PKPD2.n1,Benchmarks.PKPD2.n2,Benchmarks.PKPD2.h,Benchmarks.PKPD2.mode,faults,variance,time,initialSet,[],[],0,strName)
 
     def flightEnvelope():
-        initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
+        initialSet=[(3,4),(3,4),(3,4),(3,4),(3,4),(3,5),(-0.50,0.50),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Flight Envelope Model"
         time=20
-        uV=0
-        uP=0
+        uV=3
+        uP=-15
         VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,time,initialSet,uV,uP,strName)
-        #VerifyFaultFree.verifyTemplate(Benchmarks.FlightEnvelope.A,Benchmarks.FlightEnvelope.B,Benchmarks.FlightEnvelope.n1,Benchmarks.FlightEnvelope.n2,Benchmarks.FlightEnvelope.h,Benchmarks.FlightEnvelope.mode,faults,variance,time,initialSet,[],[],0,strName)
 
     def coOPVehiclesI():
         initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(-9,1)]
@@ -1840,16 +1688,14 @@ class VerifyFaultFree:
         uV=0
         uP=0
         VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,time,initialSet,uV,uP,strName)
-        #Benchmarks.verifyTemplateFaultFree(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.n1,Benchmarks.CoOPVehiclesI.n2,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,time,initialSet,strName)
-        #VerifyFaultFree.verifyTemplate(Benchmarks.CoOPVehiclesI.A,Benchmarks.CoOPVehiclesI.B,Benchmarks.CoOPVehiclesI.n1,Benchmarks.CoOPVehiclesI.n2,Benchmarks.CoOPVehiclesI.h,Benchmarks.CoOPVehiclesI.mode,faults,variance,time,initialSet,[],[],0,strName)
 
     def coOPVehiclesII():
+        initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Networked Cooperative Platoon of Vehicles - II"
         time=20
         uV=0
-        uP=0
+        uP=1
         VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.CoOPVehiclesII.A,Benchmarks.CoOPVehiclesII.B,Benchmarks.CoOPVehiclesII.h,Benchmarks.CoOPVehiclesII.mode,time,initialSet,uV,uP,strName)
-        #VerifyFaultFree.verifyTemplate(Benchmarks.CoOPVehiclesII.A,Benchmarks.CoOPVehiclesII.B,Benchmarks.CoOPVehiclesII.n1,Benchmarks.CoOBenchmarks.CoOPVehiclesI.n1,Benchmarks.CoOPVehiclesI.n2PVehiclesII.n2,Benchmarks.CoOPVehiclesII.h,Benchmarks.CoOPVehiclesII.mode,faults,variance,time,initialSet,[],[],0,strName)
 
     def holes():
         initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(-100,100),(-100,100)]
@@ -1858,16 +1704,14 @@ class VerifyFaultFree:
         uV=0
         uP=0
         VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,time,initialSet,uV,uP,strName)
-        #VerifyFaultFree.verifyTemplate(Benchmarks.HolesPXp.A,Benchmarks.HolesPXp.B,Benchmarks.HolesPXp.n1,Benchmarks.HolesPXp.n2,Benchmarks.HolesPXp.h,Benchmarks.HolesPXp.mode,faults,variance,time,initialSet,[],[],0,strName)
 
     def motorTransmission1():
         initialSet=[(0,0),(-0.08,0.08),(-0.0165,-0.0165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         strName="Motor Transmission - I"
         time=20
-        uV=0
-        uP=0
+        uV=2
+        uP=-0.2
         VerifyFaultFree.verifyTemplateFaultFree(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,time,initialSet,uV,uP,strName)
-        #VerifyFaultFree.verifyTemplate(Benchmarks.MotorTransmission1.A,Benchmarks.MotorTransmission1.B,Benchmarks.MotorTransmission1.n1,Benchmarks.MotorTransmission1.n2,Benchmarks.MotorTransmission1.h,Benchmarks.MotorTransmission1.mode,faults,variance,time,initialSet,[],[],0,strName)
 
     def motorTransmission2():
         initialSet=[(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0)]
@@ -1963,7 +1807,6 @@ class Finder:
                 flt=(i,l,j,b)
                 inp=InputFormation(self.appxM,self.n,[flt])
                 dyn=Dynamics(inp.formMatA(),self.n,[flt])
-                #print(dyn.findConstStr())
                 rg=StructLME([dyn.findConstStr()]+dyn.findVarBlkStr())
                 if (rg.isCondSAT()):
                     fltList.append(flt)
@@ -1971,12 +1814,10 @@ class Finder:
                     rg.visualizeStructLME()
                     print('\n')'''
         fltList=Finder.filterOutInt(fltList)
-        #fltList=[(1,2,3,2),(4,5,6,7),(8,9,10,11),(3,4,5,6)]
 
         if len(fltList)>0:
             for n in range(len(fltList),0,-1):
                 for elem in itertools.combinations(fltList,n):
-                    #print(elem)
                     inp=InputFormation(self.appxM,self.n,elem)
                     dyn=Dynamics(inp.formMatA(),self.n,elem)
                     rg=StructLME([dyn.findConstStr()]+dyn.findVarBlkStr())
@@ -1989,7 +1830,6 @@ class Finder:
                 if elem!=elem2:
                     if (Finder.intersection(elem[0],elem[1],elem2[0],elem2[1]) and Finder.intersection(elem[2],elem[3],elem2[2],elem2[3])):
                         l.remove(elem2)
-        #print(l)
         return l
 
     def intersection(x,lx,y,ly):
@@ -2032,7 +1872,6 @@ class Search:
         faults=[]
         for f in strFault.split('\n'):
             t=f.strip().split(',')
-            #print(t)
             if (len(t[0].strip())>0):
                     faults.append((int(t[0].strip()),int(t[1].strip()),int(t[2].strip()),int(t[3].strip())))
         print(faults)
@@ -2049,7 +1888,6 @@ class Search:
         print(A)
 
         b=[]
-        #print(strB)
         for row in strB.split('\n'):
             tmp=row.strip().split(',')
             l=[]
@@ -2166,7 +2004,6 @@ class ConsolidatedVerificationReport:
         tree = ET.parse(fname)
         root = tree.getroot()
         for child in root:
-            #print(child.tag,child.text)
             if (child.tag=='h'):
                 h=float(child.text.strip())
                 print(h)
@@ -2237,26 +2074,12 @@ class ConsolidatedVerificationReport:
         B=np.array(b)
         print(B)
 
-        #print(int(time/h)+1)
         ConsolidatedVerificationReport.conVerTemplate(A,B,h,mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName)
 
     def readFromFileTimeVarying(fname):
-        '''A=
-        B=
-        h=
-        mode=
-        faults=
-        variance=
-        initialSet=
-        strName=
-        time=
-        unsafeState=
-        unsafeParam=
-        Verify.verifyTemplate(A,B,h,mode,faults,variance,initialSet,strName,time,unsafeState,unsafeParam)'''
         tree = ET.parse(fname)
         root = tree.getroot()
         for child in root:
-            #print(child.tag,child.text)
             if (child.tag=='h'):
                 h=float(child.text.strip())
                 print(h)
@@ -2332,12 +2155,10 @@ class ConsolidatedVerificationReport:
         B=np.array(b)
         print(B)
 
-        #print(int(time/h)+1)
         ConsolidatedVerificationReport.conVerTemplateTimeVarying(A,B,h,mode,faults,variance,time,initialSet,unsafeState,unsafeParam,strName,step)
 
     def test():
         faults=[(3,3,0,3)]
-        #faults=[(2,3,2,3)]
         variance=[(5,5)]
         initialSet=[(-1,1),(-1,1),(-1,1),(-1,1),(-1,1),(-1,1)]
         strName="Example Model"
@@ -2348,7 +2169,6 @@ class ConsolidatedVerificationReport:
 
     def testTimevarying():
         faults=[(3,3,0,3)]
-        #faults=[(2,3,2,3)]
         variance=[[(5,5),(1,1)]]
         initialSet=[(-1,1),(-1,1),(-1,1),(-1,1),(-1,1),(-1,1)]
         strName="Example Model (Time-Varying)"
@@ -2360,9 +2180,7 @@ class ConsolidatedVerificationReport:
 
     def PKPD2():
         faults=[(0,4,4,1)]
-        #faults=[(3,1,4,1)]
         variance=[(5,5)]
-        #initialSet=[(1,6),(0,10),(0,10),(1,8),(0,200)]
         initialSet=[(1,6),(0,10),(0,10),(1,8),(1,1)]
         strName="PK/PD Model - II"
         time=20
@@ -2372,8 +2190,6 @@ class ConsolidatedVerificationReport:
 
     def PKPD2TimeVarying():
         faults=[(0,4,4,1)]
-        #faults=[(3,1,4,1)]
-        #variance=[[(-1000,1002),(1,1),(0.1,1.9),(-1000,1002),(-1000,1002),(-1,2),(-2,3),(-100,102),(0.8,1.2),(0.5,1.5),(-1,2),(0.1,1.9),(-1,2),(0.5,1.5),(0.6,0.4),(0.8,1.2),(0.7,1.3),(-1,2),(0.8,1.2),(0.5,1.5)]]
         variance=[[(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000),(-1000,2000)]]
         initialSet=[(1,6),(0,10),(0,10),(1,8),(1,1)]
         var=30
@@ -2385,11 +2201,7 @@ class ConsolidatedVerificationReport:
 
     def flightEnvelope():
         faults=[(0,6,6,10)]
-        #faults=[(0,8,8,8)]
         variance=[(0.87,1.13)]
-        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(5,10),(-0.1,0.1),(-0.1,0.1),(-0.1,0.1)]
-        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(-1,1),(-1,1),(1,1),(1,1),(1,1),(1,1)]
-        #initialSet=[(3,4),(3,4),(3,5),(3,4),(3,4),(3,5),(-0.50,0.50),(-0.50,0.50),(-0.50,0.50),(-1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         initialSet=[(3,4),(3,4),(3,4),(3,4),(3,4),(3,5),(-0.5,0.5),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Flight Envelope Model"
         time=20
@@ -2399,9 +2211,6 @@ class ConsolidatedVerificationReport:
 
     def flightEnvelopeTimeVarying():
         faults=[(0,6,6,10)]
-        #faults=[(0,8,8,8)]
-        #faults=[(0,2,1,14)]
-        #variance=[[(0.99,1.01),(0.98,1.02),(1,1),(0.9,1.1),(0.95,1.05),(0.8,1.2),(0.7,1.3),(0.9,1.1),(1,1),(0.99,1.01),(0.95,1.05),(1,1),(0.98,1.02),(0.8,1.2),(1,1),(0.75,1.25),(1,1),(0.9,1.1),(0.7,1.3),(0.9,1.1)]]
         variance=[[(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13),(0.87,1.13)]]
         initialSet=[(3,4),(3,4),(3,4),(3,4),(3,4),(3,5),(-0.50,0.50),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Flight Envelope Model (Time-Varying Perturbation)"
@@ -2415,7 +2224,6 @@ class ConsolidatedVerificationReport:
     def coOPVehiclesI():
         faults=[(0,9,9,1)]
         variance=[(5,5)]
-        #initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(1,1)]
         initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Networked Cooperative Platoon of Vehicles - I"
         time=20
@@ -2435,7 +2243,6 @@ class ConsolidatedVerificationReport:
 
     def coOPVehiclesIITimeVarying():
         faults=[(0,9,9,1)]
-        #variance=[[(0.5,1.5),(0.6,1.4),(0.5,1.5),(0.7,1.3),(-1,2),(0.5,1.5),(0.4,0.6),(0.5,1.5),(0.6,1.4),(0.7,1.3),(0.65,1.35),(0.6,1.4),(0.7,1.3),(0.6,1.4),(0.5,1.5),(0.7,1.3),(-1,2),(0.7,1.3),(0.5,1.5),(0.8,1.2)]]
         variance=[[(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9),(0.1,1.9)]]
         initialSet=[(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1),(1,1)]
         strName="Networked Cooperative Platoon of Vehicles - II (Time-Varying Perturbation)"
@@ -2448,7 +2255,6 @@ class ConsolidatedVerificationReport:
     def holes():
         faults=[(0, 4, 4, 4)]
         variance = [(5,5)]
-        #initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(-100,100),(0,0),(0,0),(-100,100),(-100,100)]
         initialSet=[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(-100,-100),(-100,-100)]
         strName="Holes Plant Xp"
         time=20
@@ -2459,7 +2265,6 @@ class ConsolidatedVerificationReport:
     def motorTransmission1():
         faults=[(0,4,4,3)]
         variance = [(5,5)]
-        #initialSet=[(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         initialSet=[(0,0),(-0.08,0.08),(-0.0165,-0.0165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         strName="Motor Transmission - I"
         time=20
@@ -2469,9 +2274,7 @@ class ConsolidatedVerificationReport:
 
     def motorTransmission1TimeVarying():
         faults=[(0,4,4,3)]
-        #variance = [[(0.7,1.3),(-0.2,1),(0.01,1.99),(-0.1,1),(0.8,1.2),(-0.3,1),(0.7,1.3),(1,1),(0.8,1.2),(0.6,0.4),(0.65,0.35),(0.8,1.2),(1,1),(1,1.2),(0.7,1),(0.8,1),(1,1.1),(1,1.2),(1,1),(0.9,1.1)]]
         variance = [[(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1),(-0.01,1)]]
-        #initialSet=[(0,0),(-0.08,0.08),(-0.165,-0.165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         initialSet=[(0,0),(-0.08,0.08),(-0.0165,-0.0165),(-0.01,0.01),(0,0),(70,70),(1,1)]
         var=2
         strName="Motor Transmission - I (Time-Varying Perturbation)"
