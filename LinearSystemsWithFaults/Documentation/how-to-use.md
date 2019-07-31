@@ -20,7 +20,7 @@ The Verification Report contains the following information:
 * Total Time taken by the Verification Engine.
 * If the system is unsafe, it can also display a counter example. (if this option is chosen)
 
-Please note that customizations (or extensions) can be done using the available APIs (please refer to the API Documentation at `LinearSystemsWithFaults/Documentation/api-doc.md` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults/Documentation/api-doc.md)))
+Please note that customizations (or extensions) can be done using the available APIs (please refer to the API Documentation at `LinearSystemsWithFaults/Documentation/api-doc.md` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/master/LinearSystemsWithFaults/Documentation/api-doc.md)))
 
 
 
@@ -32,11 +32,11 @@ Please note that customizations (or extensions) can be done using the available 
 
 * ### XML File (Constant Perturbation)
 
-The template of the input XML format can be found in `LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input-template.xml` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input-template.xml))
+The template of the input XML format can be found in `LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input-template.xml` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/master/LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input-template.xml))
 
 The whole input should be enclosed with the tag `<input>`
 
-A sample XML input file can be found in `LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input2.xml` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input2.xml))
+A sample XML input file can be found in `LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input2.xml` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/master/LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input2.xml))
 
 Following are the description of other tags:
 
@@ -110,11 +110,11 @@ The value at this tag should be an integer.
 
 * ### XML File (Time-Varying Perturbation)
 
-The template of the input XML format can be found in `LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input-templateTV.xml` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input-templateTV.xml))
+The template of the input XML format can be found in `LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input-templateTV.xml` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/master/LinearSystemsWithFaults/VerificationEngine/InputFiles/test-input-templateTV.xml))
 
 The whole input should be enclosed with the tag `<input>`
 
-A sample XML input file can be found in `LinearSystemsWithFaults/VerificationEngine/InputFiles/test-inputTV2.xml` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults/VerificationEngine/InputFiles/test-inputTV2.xml))
+A sample XML input file can be found in `LinearSystemsWithFaults/VerificationEngine/InputFiles/test-inputTV2.xml` ([here](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/master/LinearSystemsWithFaults/VerificationEngine/InputFiles/test-inputTV2.xml))
 
 Following are the description of other tags:
 
