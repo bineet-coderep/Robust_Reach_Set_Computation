@@ -16,7 +16,7 @@ Once you have `Python` installed, please install `numpy`.
 
 _Please note that this step is optional_.
 
-The above installation can be checked by running [this](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults/EnvironmentTester/test-install.py) python script in `LinearSystemWithFaults/EnvironmentTester/test-install.py`
+The above installation can be checked by running [this]https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/master/LinearSystemsWithFaults/EnvironmentTester/test-install.py) python script in `LinearSystemWithFaults/EnvironmentTester/test-install.py`
 
 ​	`python test-install.py`
 
