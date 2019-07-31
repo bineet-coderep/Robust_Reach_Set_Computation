@@ -1,6 +1,6 @@
 # How to Use
 
-This document is on how to use the main verification script `uncertain-system-verifier.py` ([link](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults/VerificationEngine/uncertain-system-verifier.py)) in `LinearSystemsWithFaults/VerificationEngine/`
+This document is on how to use the main verification script `uncertain-system-verifier.py` ([link](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/master/LinearSystemsWithFaults/VerificationEngine/uncertain-system-verifier.py)) in `LinearSystemsWithFaults/VerificationEngine/`
 
 This script can take input by following methods:
 
