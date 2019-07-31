@@ -1,6 +1,6 @@
 # API Documentation - Uncertain Linear System Verifier
 
-The API python file can be found in `/LinearSystemsWithFaults/VerificationEngine/RobustReachSetAPI.py` ([link](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/refactoring/LinearSystemsWithFaults//VerificationEngine/RobustReachSetAPI.py))
+The API python file can be found in `/LinearSystemsWithFaults/VerificationEngine/RobustReachSetAPI.py` ([link](https://github.com/bineet-coderep/Robust_Reach_Set_Computation/blob/master/LinearSystemsWithFaults//VerificationEngine/RobustReachSetAPI.py))
 
 ## Class Structure
 
