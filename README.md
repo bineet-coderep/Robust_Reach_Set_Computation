@@ -2,7 +2,7 @@
 
 Based on the paper: 
 
-[**Robust Reachable Set: Accounting for Uncertainties in Linear Dynamical Systems**, Bineet Ghosh, Parasara Sridhar Duggirala, ACM Transactions on Embedded Computing Systems (TECS)](https://dl.acm.org/citation.cfm?id=3358229)
+[**Robust Reachable Set: Accounting for Uncertainties in Linear Dynamical Systems**, Bineet Ghosh, Parasara Sridhar Duggirala, ACM Transactions on Embedded Computing Systems (TECS).](https://dl.acm.org/citation.cfm?id=3358229)
 
 
 
